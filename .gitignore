@@ -16,6 +16,9 @@
 # production
 /build
 
+# SPA export
+/export
+
 # misc
 .DS_Store
 *.pem
