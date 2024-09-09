@@ -250,9 +250,10 @@ export default function DashboardPage() {
         {
           label: "Actual Usage",
           data: actualUsage,
-          borderColor: "red",
+          borderColor: "rgba(255, 99, 132, 1)",
+          backgroundColor: "rgba(255, 99, 132, 0.2)",
           fill: false,
-          pointRadius: 0,
+          borderWidth: 2,
         },
         {
           label: "Ideal Usage",
@@ -260,10 +261,10 @@ export default function DashboardPage() {
             x: index,
             y: value,
           })),
-          borderColor: "blue",
+          borderColor: "rgba(54, 162, 235, 1)",
+          backgroundColor: "rgba(54, 162, 235, 0.2)",
           fill: false,
-          pointRadius: 0,
-          order: 1,
+          borderWidth: 2,
         },
       ],
     };
@@ -289,6 +290,7 @@ export default function DashboardPage() {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top" as const,
@@ -297,10 +299,32 @@ export default function DashboardPage() {
         display: true,
         text: "Usage Over Time",
       },
+      tooltip: {
+        mode: "index",
+        intersect: false,
+      },
     },
     scales: {
       x: {
         type: "linear" as const,
+        title: {
+          display: true,
+          text: "Days",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Remaining",
+        },
+      },
+    },
+    elements: {
+      point: {
+        radius: 0,
+      },
+      line: {
+        tension: 0.4,
       },
     },
   };
@@ -310,7 +334,7 @@ export default function DashboardPage() {
       className={`min-h-screen ${darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"}`}
     >
       <nav
-        className={`bg-red-800 p-4 text-white flex justify-between items-center`}
+        className={`${darkMode ? "bg-gray-950" : "bg-red-800"} p-4 text-white flex justify-between items-center`}
       >
         <div>
           <Link href="/" className="mr-4 font-bold">
@@ -361,7 +385,13 @@ export default function DashboardPage() {
                 Meal blocks:{" "}
                 <span
                   style={{
-                    color: blocksStatus.includes("Ahead") ? "green" : "red",
+                    color: blocksStatus.includes("Ahead")
+                      ? darkMode
+                        ? "#66BB6A"
+                        : "#2E7D32"
+                      : darkMode
+                        ? "#FF5252"
+                        : "#D32F2F",
                   }}
                 >
                   {blocksStatus}
@@ -371,7 +401,13 @@ export default function DashboardPage() {
                 Flex dollars:{" "}
                 <span
                   style={{
-                    color: flexStatus.includes("Ahead") ? "green" : "red",
+                    color: flexStatus.includes("Ahead")
+                      ? darkMode
+                        ? "#66BB6A"
+                        : "#2E7D32"
+                      : darkMode
+                        ? "#FF5252"
+                        : "#D32F2F",
                   }}
                 >
                   {flexStatus}
@@ -411,7 +447,9 @@ export default function DashboardPage() {
               >
                 Meal Blocks Usage
               </h2>
-              <Line options={options} data={blockData} />
+              <div className="h-[400px] md:h-[600px]">
+                <Line options={options} data={blockData} />
+              </div>
             </div>
             <div
               className={`${darkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg shadow md:col-span-2`}
@@ -421,7 +459,9 @@ export default function DashboardPage() {
               >
                 Flex Dollars Usage
               </h2>
-              <Line options={options} data={flexData} />
+              <div className="h-[400px] md:h-[600px]">
+                <Line options={options} data={flexData} />
+              </div>
             </div>
           </div>
         ) : (

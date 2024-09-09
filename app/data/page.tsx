@@ -126,7 +126,9 @@ export default function DataManagement() {
         darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
       }`}
     >
-      <nav className="bg-red-800 p-4 text-white flex justify-between items-center">
+      <nav
+        className={`${darkMode ? "bg-gray-950" : "bg-red-800"} p-4 text-white flex justify-between items-center`}
+      >
         <div>
           <Link href="/" className="mr-4">
             Dashboard
