@@ -2,7 +2,7 @@
 const nextConfig = {
   output: "export",
   trailingSlash: true,
-  basePath: "/out",
+  basePath: "/cmu-meal-tracker",
 };
 
 export default nextConfig;
