@@ -10,9 +10,6 @@
 # next.js
 /.next/
 
-# SPA export
-/export
-
 # misc
 .DS_Store
 *.pem
@@ -24,9 +21,6 @@ yarn-error.log*
 
 # local env files
 .env*.local
-
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo
