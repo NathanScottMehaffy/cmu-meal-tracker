@@ -49,6 +49,7 @@ export default function DashboardPage() {
   const [idealFlexPerDayFromNow, setIdealFlexPerDayFromNow] = useState(0);
   const currentMealOption = getCurrentMealOption();
   const [isClient, setIsClient] = useState(false);
+  const [averageValuePerBlock, setAverageValuePerBlock] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
@@ -181,6 +182,22 @@ export default function DashboardPage() {
         // Calculate ideal flex dollars per day from now
         const remainingDays = totalDaysCount - currentDayCount;
         setIdealFlexPerDayFromNow(remainingFlexDollarsAmount / remainingDays);
+
+        // Calculate average value per block
+        if (blockPlan) {
+          const totalTransactionAmount = blockPlan.transactions.reduce(
+            (sum, transaction) => {
+              const amount = parseFloat(
+                transaction.approvedAmount.replace("$", ""),
+              );
+              return sum + (isNaN(amount) ? 0 : amount);
+            },
+            0,
+          );
+          const avgValuePerBlock =
+            totalTransactionAmount / blockPlan.transactions.length;
+          setAverageValuePerBlock(avgValuePerBlock);
+        }
       }
     }
   }, [currentMealOption]);
@@ -438,6 +455,8 @@ export default function DashboardPage() {
               </h2>
               <p>Meal blocks: {actualBlocksPerDay.toFixed(2)}</p>
               <p>Flex dollars: ${actualFlexPerDay.toFixed(2)}</p>
+              <h3 className="mt-4 font-semibold">Average Value Per Block:</h3>
+              <p>${averageValuePerBlock.toFixed(2)}</p>
             </div>
             <div
               className={`${darkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg shadow md:col-span-2`}
