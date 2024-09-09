@@ -262,14 +262,20 @@ export default function DataManagement() {
                             </tr>
                           </thead>
                           <tbody>
-                            {plan.transactions.map((transaction, index) => (
-                              <tr key={index}>
-                                <td>{transaction.location}</td>
-                                <td>{transaction.dateTime}</td>
-                                <td>{transaction.requestedAmount}</td>
-                                <td>{transaction.approvedAmount}</td>
-                              </tr>
-                            ))}
+                            {plan.transactions
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.dateTime).getTime() -
+                                  new Date(a.dateTime).getTime(),
+                              )
+                              .map((transaction, index) => (
+                                <tr key={index}>
+                                  <td>{transaction.location}</td>
+                                  <td>{transaction.dateTime}</td>
+                                  <td>{transaction.requestedAmount}</td>
+                                  <td>{transaction.approvedAmount}</td>
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                       ) : (
