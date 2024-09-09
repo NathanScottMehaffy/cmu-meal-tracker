@@ -26,14 +26,14 @@ ChartJS.register(
 );
 
 const MEAL_OPTION_DATA = {
-  Green: { blocks: 292, flexDollars: 270 },
-  Blue: { blocks: 252, flexDollars: 520 },
-  Red: { blocks: 205, flexDollars: 850 },
+  // 6 blocks subtracted for orientation
+  Green: { blocks: 292 - 6, flexDollars: 270 },
+  Blue: { blocks: 252 - 6, flexDollars: 520 },
+  Red: { blocks: 205 - 6, flexDollars: 850 },
 };
 
 export default function DashboardPage() {
-  const { darkMode, toggleDarkMode, getActiveMealPlan, getCurrentMealOption } =
-    useAppStore();
+  const { darkMode, toggleDarkMode, getCurrentMealOption } = useAppStore();
   const [currentDay, setCurrentDay] = useState(0);
   const [totalDays, setTotalDays] = useState(0);
   const [remainingBlocks, setRemainingBlocks] = useState(0);
@@ -44,10 +44,16 @@ export default function DashboardPage() {
   const [actualFlexPerDay, setActualFlexPerDay] = useState(0);
   const [blocksStatus, setBlocksStatus] = useState("");
   const [flexStatus, setFlexStatus] = useState("");
-  const [activePlan, setActivePlan] = useState(getActiveMealPlan());
+  const [idealBlocksPerDayFromNow, setIdealBlocksPerDayFromNow] = useState(0);
+  const [idealFlexPerDayFromNow, setIdealFlexPerDayFromNow] = useState(0);
   const currentMealOption = getCurrentMealOption();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+
+    const { mealPlans } = useAppStore.getState();
+
     // Define the periods
     const periods = [
       {
@@ -102,15 +108,22 @@ export default function DashboardPage() {
     setCurrentDay(foundPeriod ? currentDayCount : totalDaysCount);
 
     // Calculate remaining blocks and flex dollars
-    if (activePlan && currentMealOption) {
+    if (currentMealOption) {
       const STARTING_MEAL_BLOCKS = MEAL_OPTION_DATA[currentMealOption].blocks;
       const STARTING_FLEX_DOLLARS =
         MEAL_OPTION_DATA[currentMealOption].flexDollars;
 
-      const blockPlan = activePlan.planName.includes("Flex")
-        ? null
-        : activePlan;
-      const flexPlan = activePlan.planName.includes("Flex") ? activePlan : null;
+      const blockPlan = mealPlans.find(
+        (plan) =>
+          plan.planName.includes(currentMealOption) &&
+          !plan.planName.includes("Flex") &&
+          !plan.planName.includes("Guest"),
+      );
+      const flexPlan = mealPlans.find(
+        (plan) =>
+          plan.planName.includes(currentMealOption) &&
+          plan.planName.includes("Flex"),
+      );
 
       if (blockPlan) {
         const remainingBlocksCount =
@@ -131,8 +144,12 @@ export default function DashboardPage() {
         const actualBlocksUsed = STARTING_MEAL_BLOCKS - remainingBlocksCount;
 
         setBlocksStatus(
-          `${actualBlocksUsed < idealBlocksUsed ? "Ahead" : "Behind"} by ${Math.abs(actualBlocksUsed - idealBlocksUsed).toFixed(2)} blocks`,
+          `${actualBlocksUsed < idealBlocksUsed ? "Ahead" : "Behind"} by ${Math.abs(actualBlocksUsed - idealBlocksUsed).toFixed(1)} blocks`,
         );
+
+        // Calculate ideal blocks per day from now
+        const remainingDays = totalDaysCount - currentDayCount;
+        setIdealBlocksPerDayFromNow(remainingBlocksCount / remainingDays);
       }
 
       if (flexPlan) {
@@ -159,9 +176,13 @@ export default function DashboardPage() {
         setFlexStatus(
           `${actualFlexUsed < idealFlexUsed ? "Ahead" : "Behind"} by $${Math.abs(actualFlexUsed - idealFlexUsed).toFixed(2)}`,
         );
+
+        // Calculate ideal flex dollars per day from now
+        const remainingDays = totalDaysCount - currentDayCount;
+        setIdealFlexPerDayFromNow(remainingFlexDollarsAmount / remainingDays);
       }
     }
-  }, [activePlan, currentMealOption]);
+  }, [currentMealOption]);
 
   const generateChartData = (
     startValue: number,
@@ -174,64 +195,97 @@ export default function DashboardPage() {
       (_, i) => startValue - i * (startValue / totalDays),
     );
 
-    const relevantPlan =
-      activePlan &&
-      (isBlocks
-        ? !activePlan.planName.includes("Flex")
-        : activePlan.planName.includes("Flex"))
-        ? activePlan
-        : null;
+    const relevantPlan = useAppStore
+      .getState()
+      .mealPlans.find(
+        (plan) =>
+          (isBlocks
+            ? !plan.planName.includes("Flex")
+            : plan.planName.includes("Flex")) &&
+          plan.planName.includes(currentMealOption || ""),
+      );
 
     const actualUsage = relevantPlan
-      ? relevantPlan.transactions.reduce(
-          (acc: { x: number; y: number }[], transaction, index) => {
-            const amount = isBlocks
-              ? 1
-              : parseFloat(transaction.approvedAmount.replace("$", ""));
-            acc.push({
-              x: index,
-              y:
-                acc.length > 0
-                  ? acc[acc.length - 1].y - amount
-                  : startValue - amount,
-            });
-            return acc;
-          },
-          [],
-        )
+      ? isBlocks
+        ? Array.from({ length: currentDay + 1 }, (_, day) => {
+            const transactionsUpToDay = relevantPlan.transactions.filter(
+              (transaction) => {
+                const transactionDate = new Date(transaction.dateTime);
+                return (
+                  transactionDate <=
+                  new Date(
+                    new Date().setDate(
+                      new Date().getDate() - (currentDay - day),
+                    ),
+                  )
+                );
+              },
+            );
+            return {
+              x: day,
+              y: startValue - transactionsUpToDay.length,
+            };
+          })
+        : relevantPlan.transactions.reduce(
+            (acc: { x: number; y: number }[], transaction, index) => {
+              const amount = parseFloat(
+                transaction.approvedAmount.replace("$", ""),
+              );
+              acc.push({
+                x: index,
+                y:
+                  acc.length > 0
+                    ? acc[acc.length - 1].y - amount
+                    : startValue - amount,
+              });
+              return acc;
+            },
+            [],
+          )
       : [];
 
     return {
       labels: Array.from({ length: totalDays + 1 }, (_, i) => i.toString()),
       datasets: [
         {
-          label: "Ideal Usage",
-          data: idealUsage,
-          borderColor: "blue",
-          fill: false,
-        },
-        {
           label: "Actual Usage",
           data: actualUsage,
           borderColor: "red",
           fill: false,
+          pointRadius: 0,
+        },
+        {
+          label: "Ideal Usage",
+          data: idealUsage.map((value, index) => ({
+            x: index,
+            y: value,
+          })),
+          borderColor: "blue",
+          fill: false,
+          pointRadius: 0,
+          order: 1,
         },
       ],
     };
   };
 
-  const blockData = generateChartData(
-    currentMealOption ? MEAL_OPTION_DATA[currentMealOption].blocks : 0,
-    true,
-    currentDay,
-    totalDays,
-  );
-  const flexData = generateChartData(
-    currentMealOption ? MEAL_OPTION_DATA[currentMealOption].flexDollars : 0,
-    false,
-    currentDay,
-    totalDays,
-  );
+  const blockData = currentMealOption
+    ? generateChartData(
+        MEAL_OPTION_DATA[currentMealOption].blocks,
+        true,
+        currentDay,
+        totalDays,
+      )
+    : { labels: [], datasets: [] };
+
+  const flexData = currentMealOption
+    ? generateChartData(
+        MEAL_OPTION_DATA[currentMealOption].flexDollars,
+        false,
+        currentDay,
+        totalDays,
+      )
+    : { labels: [], datasets: [] };
 
   const options = {
     responsive: true,
@@ -242,6 +296,11 @@ export default function DashboardPage() {
       title: {
         display: true,
         text: "Usage Over Time",
+      },
+    },
+    scales: {
+      x: {
+        type: "linear" as const,
       },
     },
   };
@@ -274,7 +333,7 @@ export default function DashboardPage() {
         >
           Meal Plan Dashboard
         </h1>
-        {activePlan && currentMealOption ? (
+        {isClient && currentMealOption ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
               className={`${darkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg shadow`}
@@ -298,7 +357,6 @@ export default function DashboardPage() {
               >
                 Current Status
               </h2>
-              <p>Active Meal Plan: {activePlan.planName}</p>
               <p>
                 Meal blocks:{" "}
                 <span
@@ -330,6 +388,9 @@ export default function DashboardPage() {
               </h2>
               <p>Meal blocks: {idealBlocksPerDay.toFixed(2)}</p>
               <p>Flex dollars: ${idealFlexPerDay.toFixed(2)}</p>
+              <h3 className="mt-4 font-semibold">From Now On:</h3>
+              <p>Meal blocks: {idealBlocksPerDayFromNow.toFixed(2)}</p>
+              <p>Flex dollars: ${idealFlexPerDayFromNow.toFixed(2)}</p>
             </div>
             <div
               className={`${darkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg shadow`}
@@ -364,7 +425,7 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <p>No active meal plan found. Please upload your meal plan data.</p>
+          <p>No meal option found. Please upload your meal plan data.</p>
         )}
       </div>
     </div>

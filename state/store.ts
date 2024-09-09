@@ -24,7 +24,6 @@ interface AppState {
   toggleDarkMode: () => void;
   addMealPlanData: (newData: MealPlan[]) => void;
   clearAllData: () => void;
-  getActiveMealPlan: () => MealPlan | null;
   getCurrentMealOption: () => MealOption | null;
 }
 
@@ -87,19 +86,6 @@ export const useAppStore = create<AppState>()(
           };
         }),
       clearAllData: () => set({ mealPlans: [], currentMealOption: null }),
-      getActiveMealPlan: () => {
-        const { mealPlans } = get();
-        if (mealPlans.length === 0) return null;
-
-        // Sort meal plans by start date (most recent first)
-        const sortedPlans = [...mealPlans].sort(
-          (a, b) =>
-            new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
-        );
-
-        // Return the most recent meal plan
-        return sortedPlans[0];
-      },
       getCurrentMealOption: () => get().currentMealOption,
     }),
     {

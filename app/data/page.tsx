@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAppStore } from "../../state/store";
 
@@ -62,15 +62,18 @@ export default function DataManagement() {
     mealPlans,
     addMealPlanData,
     clearAllData,
-    getActiveMealPlan,
     getCurrentMealOption,
   } = useAppStore();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [parseStatus, setParseStatus] = useState<
     "idle" | "success" | "error" | "noData"
   >("idle");
-  const activePlan = getActiveMealPlan();
   const currentMealOption = getCurrentMealOption();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -149,147 +152,142 @@ export default function DataManagement() {
         >
           Data Management
         </h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-6 rounded-lg shadow`}
-          >
-            <h2
-              className={`text-xl font-semibold mb-4 ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
+        {isClient && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              className={`${
+                darkMode ? "bg-gray-800" : "bg-white"
+              } p-6 rounded-lg shadow`}
             >
-              Upload HTML Files
-            </h2>
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              accept=".html"
-              className="mb-4"
-            />
-            {parseStatus === "success" && (
-              <p className="text-green-500 mt-2">File parsed successfully!</p>
-            )}
-            {parseStatus === "error" && (
-              <p className="text-red-500 mt-2">
-                Error parsing file. Please try again.
-              </p>
-            )}
-            {parseStatus === "noData" && (
-              <p className="text-yellow-500 mt-2">No data found in the file.</p>
-            )}
-          </div>
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-6 rounded-lg shadow`}
-          >
-            <h2
-              className={`text-xl font-semibold mb-4 ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
+              <h2
+                className={`text-xl font-semibold mb-4 ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Upload HTML Files
+              </h2>
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                accept=".html"
+                className="mb-4"
+              />
+              {parseStatus === "success" && (
+                <p className="text-green-500 mt-2">File parsed successfully!</p>
+              )}
+              {parseStatus === "error" && (
+                <p className="text-red-500 mt-2">
+                  Error parsing file. Please try again.
+                </p>
+              )}
+              {parseStatus === "noData" && (
+                <p className="text-yellow-500 mt-2">
+                  No data found in the file.
+                </p>
+              )}
+            </div>
+            <div
+              className={`${
+                darkMode ? "bg-gray-800" : "bg-white"
+              } p-6 rounded-lg shadow`}
             >
-              Export Data
-            </h2>
-            <button
-              onClick={exportData}
-              className="bg-red-800 text-white px-4 py-2 rounded mr-4"
+              <h2
+                className={`text-xl font-semibold mb-4 ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Export Data
+              </h2>
+              <button
+                onClick={exportData}
+                className="bg-red-800 text-white px-4 py-2 rounded mr-4"
+              >
+                Export Data
+              </button>
+              <h2
+                className={`text-xl font-semibold mb-4 mt-6 ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Import Data
+              </h2>
+              <input
+                type="file"
+                onChange={importData}
+                accept=".json"
+                className="mb-4"
+              />
+            </div>
+            <div
+              className={`${
+                darkMode ? "bg-gray-800" : "bg-white"
+              } p-6 rounded-lg shadow md:col-span-2`}
             >
-              Export Data
-            </button>
-            <h2
-              className={`text-xl font-semibold mb-4 mt-6 ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Import Data
-            </h2>
-            <input
-              type="file"
-              onChange={importData}
-              accept=".json"
-              className="mb-4"
-            />
-          </div>
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-6 rounded-lg shadow md:col-span-2`}
-          >
-            <h2
-              className={`text-xl font-semibold mb-4 ${
-                darkMode ? "text-white" : "text-gray-900"
-              }`}
-            >
-              Current Data
-            </h2>
-            {currentMealOption && (
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Current Meal Option</h3>
-                <p>{currentMealOption}</p>
-              </div>
-            )}
-            {activePlan ? (
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Active Meal Plan</h3>
-                <p>Plan Name: {activePlan.planName}</p>
-                <p>Start Date: {activePlan.startDate}</p>
-                <p>Current Balance: {activePlan.currentBalance}</p>
-              </div>
-            ) : (
-              <p>No active meal plan found.</p>
-            )}
-            {mealPlans.length > 0 ? (
-              <div>
-                {mealPlans.map((plan, planIndex) => (
-                  <div key={planIndex} className="mb-8">
-                    <h3 className="text-lg font-semibold mb-2">
-                      Meal Plan: {plan.planName} (Start Date: {plan.startDate})
-                    </h3>
-                    <p>Current Balance: {plan.currentBalance}</p>
+              <h2
+                className={`text-xl font-semibold mb-4 ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Current Data
+              </h2>
+              {currentMealOption && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold">Current Meal Option</h3>
+                  <p>{currentMealOption}</p>
+                </div>
+              )}
+              {mealPlans.length > 0 ? (
+                <div>
+                  {mealPlans.map((plan, planIndex) => (
+                    <div key={planIndex} className="mb-8">
+                      <h3 className="text-lg font-semibold mb-2">
+                        Meal Plan: {plan.planName} (Start Date: {plan.startDate}
+                        )
+                      </h3>
+                      <p>Current Balance: {plan.currentBalance}</p>
 
-                    <h4 className="text-md font-semibold mt-4 mb-2">
-                      Transactions
-                    </h4>
-                    {plan.transactions.length > 0 ? (
-                      <table className="w-full mb-4">
-                        <thead>
-                          <tr>
-                            <th className="text-left">Location</th>
-                            <th className="text-left">Date/Time</th>
-                            <th className="text-left">Requested Amount</th>
-                            <th className="text-left">Approved Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {plan.transactions.map((transaction, index) => (
-                            <tr key={index}>
-                              <td>{transaction.location}</td>
-                              <td>{transaction.dateTime}</td>
-                              <td>{transaction.requestedAmount}</td>
-                              <td>{transaction.approvedAmount}</td>
+                      <h4 className="text-md font-semibold mt-4 mb-2">
+                        Transactions
+                      </h4>
+                      {plan.transactions.length > 0 ? (
+                        <table className="w-full mb-4">
+                          <thead>
+                            <tr>
+                              <th className="text-left">Location</th>
+                              <th className="text-left">Date/Time</th>
+                              <th className="text-left">Requested Amount</th>
+                              <th className="text-left">Approved Amount</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <p>No transactions available</p>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={() => setShowConfirmation(true)}
-                  className="bg-red-800 text-white px-4 py-2 rounded mt-4"
-                >
-                  Clear All Data
-                </button>
-              </div>
-            ) : (
-              <p>No data available</p>
-            )}
+                          </thead>
+                          <tbody>
+                            {plan.transactions.map((transaction, index) => (
+                              <tr key={index}>
+                                <td>{transaction.location}</td>
+                                <td>{transaction.dateTime}</td>
+                                <td>{transaction.requestedAmount}</td>
+                                <td>{transaction.approvedAmount}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p>No transactions available</p>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setShowConfirmation(true)}
+                    className="bg-red-800 text-white px-4 py-2 rounded mt-4"
+                  >
+                    Clear All Data
+                  </button>
+                </div>
+              ) : (
+                <p>No data available</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       {showConfirmation && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
