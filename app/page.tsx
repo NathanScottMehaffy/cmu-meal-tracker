@@ -13,6 +13,7 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
 } from "chart.js";
 
 ChartJS.register(
@@ -287,8 +288,7 @@ export default function DashboardPage() {
         totalDays,
       )
     : { labels: [], datasets: [] };
-
-  const options = {
+  const options: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -300,7 +300,7 @@ export default function DashboardPage() {
         text: "Usage Over Time",
       },
       tooltip: {
-        mode: "index",
+        mode: "index" as const,
         intersect: false,
       },
     },
