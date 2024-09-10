@@ -201,7 +201,6 @@ export default function DashboardPage() {
       }
     }
   }, [currentMealOption]);
-
   const generateChartData = (
     startValue: number,
     isBlocks: boolean,
@@ -373,6 +372,7 @@ export default function DashboardPage() {
           display: true,
           text: "Remaining",
         },
+        min: 0,
       },
     },
     elements: {
