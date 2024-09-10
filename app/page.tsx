@@ -262,6 +262,24 @@ export default function DashboardPage() {
           )
       : [];
 
+    const projectedUsage =
+      actualUsage.length > 0
+        ? Array.from({ length: totalDays + 1 }, (_, i) => {
+            if (i < currentDay) {
+              return { x: i, y: null };
+            }
+            const firstActualValue = actualUsage[0].y;
+            const lastActualValue = actualUsage[actualUsage.length - 1].y;
+            const averageSlope =
+              (lastActualValue - firstActualValue) / currentDay;
+            return {
+              x: i,
+              y: firstActualValue + averageSlope * i,
+            };
+          })
+        : [];
+    console.log(projectedUsage);
+
     return {
       labels: Array.from({ length: totalDays + 1 }, (_, i) => i.toString()),
       datasets: [
@@ -283,6 +301,15 @@ export default function DashboardPage() {
           backgroundColor: "rgba(54, 162, 235, 0.2)",
           fill: false,
           borderWidth: 2,
+        },
+        {
+          label: "Projected Usage",
+          data: projectedUsage,
+          borderColor: "rgba(255, 99, 132, 1)",
+          backgroundColor: "rgba(255, 99, 132, 0.2)",
+          fill: false,
+          borderWidth: 2,
+          borderDash: [5, 5],
         },
       ],
     };
