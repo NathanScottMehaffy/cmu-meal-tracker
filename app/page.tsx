@@ -244,22 +244,34 @@ export default function DashboardPage() {
               y: startValue - transactionsUpToDay.length,
             };
           })
-        : relevantPlan.transactions.reduce(
-            (acc: { x: number; y: number }[], transaction, index) => {
-              const amount = parseFloat(
-                transaction.approvedAmount.replace("$", ""),
-              );
-              acc.push({
-                x: index,
-                y:
-                  acc.length > 0
-                    ? acc[acc.length - 1].y - amount
-                    : startValue - amount,
-              });
-              return acc;
-            },
-            [],
-          )
+        : Array.from({ length: currentDay + 1 }, (_, day) => {
+            const transactionsUpToDay = relevantPlan.transactions.filter(
+              (transaction) => {
+                const transactionDate = new Date(transaction.dateTime);
+                return (
+                  transactionDate <=
+                  new Date(
+                    new Date().setDate(
+                      new Date().getDate() - (currentDay - day),
+                    ),
+                  )
+                );
+              },
+            );
+            const totalSpent = transactionsUpToDay.reduce(
+              (sum, transaction) => {
+                const amount = parseFloat(
+                  transaction.approvedAmount.replace("$", ""),
+                );
+                return sum + (isNaN(amount) ? 0 : amount);
+              },
+              0,
+            );
+            return {
+              x: day,
+              y: startValue - totalSpent,
+            };
+          })
       : [];
 
     const projectedUsage =
